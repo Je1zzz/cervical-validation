@@ -1,4 +1,4 @@
-const API='https://cervical-validation.dreamy-goose-8317.chatgpt.site/api/tct';
+const API='https://cznnzigxstshvzosypch.supabase.co/functions/v1/tct-review';
 const targets=['missing','uncertain','reactive_changes','SCC_suspected','LSIL/ASC-H'];
 const labels=['NILM','ASC-US','ASC-H','LSIL','HSIL','腺细胞异常','鳞状上皮癌'];
 const $=id=>document.getElementById(id);

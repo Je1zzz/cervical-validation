@@ -1,0 +1,3 @@
+[functions.tct-review]
+# The function authenticates doctor/admin access codes itself.
+verify_jwt = false
