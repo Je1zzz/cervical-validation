@@ -1,4 +1,4 @@
-const API='https://cznnzigxstshvzosypch.supabase.co/functions/v1/tct-review';
+const API='https://cznnzigxstshvzosypch.supabase.co/functions/v1/patient-tct-review';
 const $=id=>document.getElementById(id);
 const reviewerId=localStorage.getItem('cv-reviewer-id')||crypto.randomUUID();
 localStorage.setItem('cv-reviewer-id',reviewerId);
@@ -34,11 +34,11 @@ function saveRow(id){
 }
 function render(){
  $('rows').replaceChildren();rowElements.clear();const query=$('search').value.trim().toLowerCase();
- const filtered=cases.filter(c=>!query||(c.name+' '+c.filename+' '+c.id).toLowerCase().includes(query));
+ const filtered=cases.filter(c=>!query||(c.name+' '+c.hospital+' '+c.id).toLowerCase().includes(query));
  const fragment=document.createDocumentFragment();
  filtered.forEach((c,index)=>{
   const tr=el('tr');tr.dataset.id=c.id;tr.append(el('th',String(index+1)));tr.firstChild.scope='row';
-  for(const value of [c.name,c.date,c.filename,c.pre,c.post])tr.append(el('td',value));
+  for(const value of [c.name,c.id,c.age,c.hospital,c.date,c.pre,c.post])tr.append(el('td',value));
   const d=drafts.get(c.id);
   for(const side of ['pre','post']){
    const td=el('td',undefined,'input-cell'),input=el('textarea');input.value=d[side];input.maxLength=2000;input.rows=1;input.dataset.side=side;input.setAttribute('aria-label',`${c.id} 修正${side==='pre'?'术前':'术后'}TCT`);input.spellcheck=false;
@@ -49,7 +49,7 @@ function render(){
   }
   fragment.append(tr);rowElements.set(c.id,tr);
  });
- $('rows').append(fragment);$('total').textContent=`${cases.length} 条 WSI`;$('visibleCount').textContent=`显示 ${filtered.length} / ${cases.length} 行 · 黄色两列可填写`;$('empty').hidden=filtered.length!==0;refreshStatus();
+ $('rows').append(fragment);$('total').textContent=`${cases.length} 位患者`;$('visibleCount').textContent=`显示 ${filtered.length} / ${cases.length} 行 · 黄色两列可填写`;$('empty').hidden=filtered.length!==0;refreshStatus();
 }
 $('search').oninput=render;
 $('save').onclick=async()=>{const ids=[...drafts].filter(([,d])=>pending(d)).map(([id])=>id);$('save').disabled=true;for(const id of ids)await saveRow(id);$('save').disabled=false;refreshStatus();};
@@ -62,7 +62,7 @@ $('logout').onclick=()=>{if([...drafts.values()].some(d=>pending(d)||d.promise)&
 window.addEventListener('beforeunload',event=>{if([...drafts.values()].some(d=>pending(d)||d.promise)){event.preventDefault();event.returnValue='';}});
 function csvCell(value){let text=String(value??'');if(/^[=+@\-\t\r]/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}
 $('export').onclick=async()=>{try{
- const result=await api('export');const rows=[['患者姓名','检查日期（原表扫描日期）','WSI文件名','术前TCT','术后TCT','修正术前TCT','修正术后TCT','复核医生','更新时间','WSI编号','备注']];
- for(const row of result.rows){const c=JSON.parse(row.case_payload),r=row.review_payload?JSON.parse(row.review_payload):null;rows.push([c.name,c.date,c.filename,c.pre,c.post,correction(r?.pre),correction(r?.post),row.reviewer_name,row.updated_at,c.id,r?.note]);}
+ const result=await api('export');const rows=[['患者姓名','患者编号','年龄（原表）','医院','检查日期（原表扫描日期）','术前TCT','术后TCT','修正术前TCT','修正术后TCT','复核医生','更新时间','备注']];
+ for(const row of result.rows){const c=JSON.parse(row.case_payload),r=row.review_payload?JSON.parse(row.review_payload):null;rows.push([c.name,c.id,c.age,c.hospital,c.date,c.pre,c.post,correction(r?.pre),correction(r?.post),row.reviewer_name,row.updated_at,r?.note]);}
  const url=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}));const a=el('a');a.href=url;a.download='TCT复核反馈_'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }catch(error){alert(error.message);}};
