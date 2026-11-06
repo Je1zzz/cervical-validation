@@ -9,9 +9,9 @@ const caseSchema = z.object({
 }).strict().refine(c => target.safeParse(c.preCategory).success || target.safeParse(c.postCategory).success);
 const label = z.enum(["NILM", "ASC-US", "ASC-H", "LSIL", "HSIL", "腺细胞异常", "鳞状上皮癌"]);
 const side = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("reported"), labels: z.array(label).min(1).max(7) }),
+  z.object({ status: z.literal("reported"), labels: z.array(label).max(7), text: z.string().max(2000).optional() }),
   z.object({ status: z.enum(["pending", "not_found", "not_done", "uncertain"]), labels: z.array(label).max(0) }),
-]);
+]).refine(value => value.status !== "reported" || value.labels.length > 0 || !!value.text?.trim());
 const reviewSchema = z.object({
   caseId: z.string().regex(/^WSI\d{6}$/), reviewerId: z.string().uuid(),
   reviewerName: z.string().trim().min(1).max(80), pre: side, post: side, note: z.string().max(2000),
